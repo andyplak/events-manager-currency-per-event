@@ -27,12 +27,15 @@ function em_curr_adding_custom_meta_boxes( $post ) {
 add_action( 'add_meta_boxes_event', 'em_curr_adding_custom_meta_boxes', 10, 2 );
 
 
-
+/**
+ * Render metabox with currency options. The list was the same as those included with
+ * Events Manager at the time of writing.
+ * Note, this option is disabled when in Multiple Bookings mode
+ */
 function render_curency_meta_box() {
 	global $post;
 
 	if( get_option('dbem_multiple_bookings', 0) ) {
-
 		_e('Currencies cannot be set per event when multiple bookings mode is enabled.');
 		return;
 	}
@@ -115,3 +118,48 @@ function em_curr_save_post($post_id, $post) {
 add_action('save_post', 'em_curr_save_post', 1, 2);
 
 
+
+/************ Modify Ticket price display ************/
+
+/*
+ * We can't access ticket info in the format price hook, so we need to store
+ * globally the currency that is to be converted from an earlier hook where we can
+ * see the event details
+ */
+$modify_currency = false; // Dubious global var that we use to get round filters limitation
+
+
+/**
+ * Hook into EM_Ticket->get_price() and detect if the event currency is non standard
+ * Store the currency value into our global var if requried.
+ */
+function em_curr_ticket_get_price( $ticket_price, $EM_Ticket ) {
+	global $modify_currency;
+
+	$EM_Event = $EM_Ticket->get_event();
+
+	// Does this event have a custom currency?
+	if( get_post_meta( $EM_Event->post_id, '_event_currency', true ) ) {
+		// If so we set this to our global $modify_currency var for use later on
+		$modify_currency = get_post_meta( $EM_Event->post_id, '_event_currency', true );
+	}
+	return $ticket_price;
+}
+add_filter('em_ticket_get_price','em_curr_ticket_get_price', 10, 2);
+
+
+/**
+ * Hook into Events Manager's em_get_currency_formatted function
+ * Modify currency symbol if determined previously that this needs changing
+ */
+function em_curr_get_currency_formatted($formatted_price, $price, $currency, $format) {
+	global $modify_currency;
+
+	if( $modify_currency ){
+		$formatted_price = str_replace('@', em_get_currency_symbol(true,$modify_currency), $format);
+		$formatted_price = str_replace('#', number_format( $price, 2, get_option('dbem_bookings_currency_decimal_point','.'), get_option('dbem_bookings_currency_thousands_sep',',') ), $formatted_price);
+	}
+
+	return $formatted_price;
+}
+add_filter('em_get_currency_formatted', 'em_curr_get_currency_formatted', 10, 4);
