@@ -136,6 +136,11 @@ $modify_currency = false; // Dubious global var that we use to get round filters
 function em_curr_ticket_get_price( $ticket_price, $EM_Ticket ) {
 	global $modify_currency;
 
+	if( is_multisite() && EM_MS_GLOBAL && get_current_blog_id() != NETWORK_BLOG_ID ) {
+		switch_to_blog( NETWORK_BLOG_ID );
+		$reset_blog = true;
+	}
+
 	$EM_Event = $EM_Ticket->get_event();
 
 	// Does this event have a custom currency?
@@ -143,6 +148,11 @@ function em_curr_ticket_get_price( $ticket_price, $EM_Ticket ) {
 		// If so we set this to our global $modify_currency var for use later on
 		$modify_currency = get_post_meta( $EM_Event->post_id, '_event_currency', true );
 	}
+
+	if( $reset_blog ) {
+		restore_current_blog();
+	}
+
 	return $ticket_price;
 }
 add_filter('em_ticket_get_price','em_curr_ticket_get_price', 10, 2);
@@ -177,9 +187,19 @@ function em_curr_gateway_sage_get_currency( $currency, $EM_Booking ) {
 		return $currency;
 	}
 
+	if( is_multisite() && EM_MS_GLOBAL && get_current_blog_id() != NETWORK_BLOG_ID ) {
+		switch_to_blog( NETWORK_BLOG_ID );
+		$reset_blog = true;
+	}
+
 	$EM_Event = $EM_Booking->get_event();
+
 	if( get_post_meta( $EM_Event->post_id, '_event_currency', true ) ) {
 		$currency = get_post_meta( $EM_Event->post_id, '_event_currency', true );
+	}
+
+	if( $reset_blog ) {
+		restore_current_blog();
 	}
 
 	return $currency;
