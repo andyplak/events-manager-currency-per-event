@@ -163,3 +163,25 @@ function em_curr_get_currency_formatted($formatted_price, $price, $currency, $fo
 	return $formatted_price;
 }
 add_filter('em_get_currency_formatted', 'em_curr_get_currency_formatted', 10, 4);
+
+
+/************** Modify Currency for Payment Gateways ****************/
+
+/**
+ * Hook into Sage Pay gateway and modify the currency if set on the event
+ */
+function em_curr_gateway_sage_get_currency( $currency, $EM_Booking ) {
+
+	// Skip if multi bookings is enabled
+	if( get_option('dbem_multiple_bookings') == 1 ) {
+		return $currency;
+	}
+
+	$EM_Event = $EM_Booking->get_event();
+	if( get_post_meta( $EM_Event->post_id, '_event_currency', true ) ) {
+		$currency = get_post_meta( $EM_Event->post_id, '_event_currency', true );
+	}
+
+	return $currency;
+}
+add_filter('em_gateway_sage_get_currency', 'em_curr_gateway_sage_get_currency', 10, 2);
