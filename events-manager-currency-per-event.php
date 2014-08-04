@@ -31,6 +31,12 @@ add_action( 'add_meta_boxes_event', 'em_curr_adding_custom_meta_boxes', 10, 2 );
 function render_curency_meta_box() {
 	global $post;
 
+	if( get_option('dbem_multiple_bookings', 0) ) {
+
+		_e('Currencies cannot be set per event when multiple bookings mode is enabled.');
+		return;
+	}
+
 	$curr_value = get_post_meta( $post->ID, '_event_currency', true );
 
 	$currencies = array(
@@ -107,3 +113,5 @@ function em_curr_save_post($post_id, $post) {
 
 }
 add_action('save_post', 'em_curr_save_post', 1, 2);
+
+
