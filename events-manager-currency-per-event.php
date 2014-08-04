@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: Events Manager - Currency Per Event
+ * Plugin Name: Events Manager - Currency Per Event (mforum branch)
  * Plugin URI: http://www.andyplace.co.uk
  * Description: Plugin for Events Manager that allows the ticket currency to be configered per event.
  * Version: 1.0
