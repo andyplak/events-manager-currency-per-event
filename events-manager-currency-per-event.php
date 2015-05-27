@@ -3,7 +3,7 @@
  * Plugin Name: Events Manager - Currency Per Event
  * Plugin URI: http://www.andyplace.co.uk
  * Description: Plugin for Events Manager that allows the ticket currency to be configered per event.
- * Version: 1.0
+ * Version: 1.1
  * Author: Andy Place
  * Author URI: http://www.andyplace.co.uk
  * License: GPL2
@@ -185,3 +185,23 @@ function em_curr_gateway_sage_get_currency( $currency, $EM_Booking ) {
 	return $currency;
 }
 add_filter('em_gateway_sage_get_currency', 'em_curr_gateway_sage_get_currency', 10, 2);
+
+
+/**
+ * Hook into PayPal vars and modify curreny if set on the event
+ */
+function em_curr_gateway_paypal_get_paypal_vars($paypal_vars, $EM_Booking, $EM_PayPal_Gateway) {
+
+	// Skip if multi bookings is enabled
+	if( get_option('dbem_multiple_bookings') == 1 ) {
+		return $paypal_vars;
+	}
+
+	$EM_Event = $EM_Booking->get_event();
+	if( get_post_meta( $EM_Event->post_id, '_event_currency', true ) ) {
+		$paypal_vars['currency_code'] = get_post_meta( $EM_Event->post_id, '_event_currency', true );
+	}
+
+	return $paypal_vars;
+}
+add_filter('em_gateway_paypal_get_paypal_vars', 'em_curr_gateway_paypal_get_paypal_vars', 10, 3);
