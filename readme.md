@@ -19,7 +19,7 @@ If using Events Manager Pro to send payments to a payment gateway, please note t
 
 If you're a developer feel free to fork and submit pull requests. Take a look at `em_curr_gateway_sage_get_currency` and `em_curr_gateway_paypal_get_paypal_vars` functions to see how this is done for SagePay and PayPal respectivly.
 
-If you're not a developer but need support of another payment gateway (RealEx, WorldPay, NetBanx etc) then please get in touch via [http://www.andyplace.co.uk]
+If you're not a developer but need support of another payment gateway (RealEx, WorldPay, NetBanx etc) then please get in touch via http://www.andyplace.co.uk
 
 NOTE: This will __not__ work in MultiBooking mode.
 

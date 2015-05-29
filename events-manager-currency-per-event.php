@@ -147,7 +147,6 @@ function em_curr_ticket_get_price( $ticket_price, $EM_Ticket ) {
 }
 add_filter('em_ticket_get_price','em_curr_ticket_get_price', 10, 2);
 
-
 /**
  * Hook into Events Manager's em_get_currency_formatted function
  * Modify currency symbol if determined previously that this needs changing
@@ -163,6 +162,63 @@ function em_curr_get_currency_formatted($formatted_price, $price, $currency, $fo
 	return $formatted_price;
 }
 add_filter('em_get_currency_formatted', 'em_curr_get_currency_formatted', 10, 4);
+
+
+/************** Modify currency in booking admin ********************/
+
+/**
+ * Add our custom column for the total with the correct currency to the column template
+ */
+function em_curr_bookings_table_cols_template( $cols_template ) {
+	if( is_admin() ) {
+
+		if( isset( $cols_template['booking_price'] ) ) {
+			unset( $cols_template['booking_price'] );
+		}
+		$cols_template['booking_currency_price'] = 'Total';
+	}
+	return $cols_template;
+}
+add_filter('em_bookings_table_cols_template', 'em_curr_bookings_table_cols_template', 10, 1);
+
+
+/**
+ * Ensure that our custom column is actually included where required
+ */
+function em_curr_bookings_table( $EM_Bookings_Table ) {
+	if( !in_array('booking_currency_price', $EM_Bookings_Table->cols) ) {
+		$EM_Bookings_Table->cols[] = 'booking_currency_price';
+
+		// reorder array so actions at the end
+		if(($key = array_search('actions', $EM_Bookings_Table->cols)) !== false) {
+			unset($EM_Bookings_Table->cols[$key]);
+			$EM_Bookings_Table->cols[] = 'actions';
+		}
+	}
+}
+add_action('em_bookings_table', 'em_curr_bookings_table', 10, 1);
+
+
+/**
+ * Deal with displaying the output of the total with correct currency in our custom column
+ */
+function em_curr_bookings_table_rows_col_booking_currency_price($val, $EM_Booking, $EM_Bookings_Table, $csv) {
+
+	$EM_Event = $EM_Booking->get_event();
+
+	if( get_post_meta( $EM_Event->post_id, '_event_currency', true ) ) {
+		$price = $EM_Booking->get_price(false);
+		$currency = get_post_meta( $EM_Event->post_id, '_event_currency', true );
+		$format = get_option('dbem_bookings_currency_format','@#');
+		$formatted_price = str_replace('@', em_get_currency_symbol(true,$currency), $format);
+		$formatted_price = str_replace('#', number_format( $price, 2, get_option('dbem_bookings_currency_decimal_point','.'), get_option('dbem_bookings_currency_thousands_sep',',') ), $formatted_price);
+	}else{
+		$formatted_price = $EM_Booking->get_price(true);
+	}
+	return $formatted_price;
+}
+add_filter('em_bookings_table_rows_col_booking_currency_price', 'em_curr_bookings_table_rows_col_booking_currency_price', 10, 5);
+
 
 
 /************** Modify Currency for Payment Gateways ****************/
