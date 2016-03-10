@@ -9,6 +9,32 @@
  * License: GPL2
  */
 
+$currencies = array(
+	"EUR" => "Euros",
+	"USD" => "U.S. Dollars",
+	"GBP" => "British Pounds",
+	"CAD" => "Canadian Dollars",
+	"AUD" => "Australian Dollars",
+	"BRL" => "Brazilian Reais",
+	"CZK" => "Czech Koruny",
+	"DKK" => "Danish Kroner",
+	"HKD" => "Hong Kong Dollars",
+	"HUF" => "Hungarian Forints",
+	"ILS" => "Israeli New Shekels",
+	"JPY" => "Japanese Yen",
+	"MYR" => "Malaysian Ringgit",
+	"MXN" => "Mexican Pesos",
+	"TWD" => "New Taiwan Dollars",
+	"NZD" => "New Zealand Dollars",
+	"NOK" => "Norwegian Kroner",
+	"PHP" => "Philippine Pesos",
+	"PLN" => "Polish Zlotys",
+	"SGD" => "Singapore Dollars",
+	"SEK" => "Swedish Kronor",
+	"CHF" => "Swiss Francs",
+	"THB" => "Thai Baht",
+	"TRY" => "Turkish Liras",
+);
 
 /**
  * Add metabox to revents page editor that allows us to configure the currency
@@ -33,7 +59,7 @@ add_action( 'add_meta_boxes_event', 'em_curr_adding_custom_meta_boxes', 10, 2 );
  * Note, this option is disabled when in Multiple Bookings mode
  */
 function render_curency_meta_box() {
-	global $post;
+	global $post, $currencies;
 
 	if( get_option('dbem_multiple_bookings', 0) ) {
 		_e('Currencies cannot be set per event when multiple bookings mode is enabled.');
@@ -41,33 +67,6 @@ function render_curency_meta_box() {
 	}
 
 	$curr_value = get_post_meta( $post->ID, '_event_currency', true );
-
-	$currencies = array(
-		"EUR" => "Euros",
-		"USD" => "U.S. Dollars",
-		"GBP" => "British Pounds",
-		"CAD" => "Canadian Dollars",
-		"AUD" => "Australian Dollars",
-		"BRL" => "Brazilian Reais",
-		"CZK" => "Czech Koruny",
-		"DKK" => "Danish Kroner",
-		"HKD" => "Hong Kong Dollars",
-		"HUF" => "Hungarian Forints",
-		"ILS" => "Israeli New Shekels",
-		"JPY" => "Japanese Yen",
-		"MYR" => "Malaysian Ringgit",
-		"MXN" => "Mexican Pesos",
-		"TWD" => "New Taiwan Dollars",
-		"NZD" => "New Zealand Dollars",
-		"NOK" => "Norwegian Kroner",
-		"PHP" => "Philippine Pesos",
-		"PLN" => "Polish Zlotys",
-		"SGD" => "Singapore Dollars",
-		"SEK" => "Swedish Kronor",
-		"CHF" => "Swiss Francs",
-		"THB" => "Thai Baht",
-		"TRY" => "Turkish Liras",
-	);
 
 	?>
 	<p><strong>
@@ -89,6 +88,35 @@ function render_curency_meta_box() {
 	<?php
 }
 
+/**
+ * Hook into front end event submission form and add currency fields
+ */
+function em_curr_front_event_form_footer() {
+	global $currencies;
+
+	if( get_option('dbem_multiple_bookings', 0) ) {
+		return;
+	}
+
+	$curr_value = get_post_meta( $post->ID, '_event_currency', true );
+
+	$default_currency = esc_html(get_option('dbem_bookings_currency','USD'));
+	?>
+	<h3><?php _e( 'Event Currency' ); ?></h3>
+	<select name="dbem_bookings_currency">
+		<option><?php echo $default_currency ?> - <?php echo $currencies[ $default_currency ] ?></option>
+		<option disabled>------------------</option>
+		<?php foreach( $currencies as $key => $currency) : ?>
+		<option value="<?php echo $key ?>">
+			<?php echo $key ?> - <?php echo $currency ?>
+		</option>
+		<?php endforeach; ?>
+	</select>
+	<?php
+
+}
+add_action('em_front_event_form_footer', 'em_curr_front_event_form_footer');
+
 
 /**
  * Save currency option setting
@@ -97,7 +125,8 @@ function em_curr_save_post($post_id, $post) {
 
 	// verify this came from the our screen and with proper authorization,
 	// because save_post can be triggered at other times
-	if ( !wp_verify_nonce( $_POST['_emnonce'], 'edit_event' ) ) {
+	if ( !wp_verify_nonce( $_POST['_emnonce'], 'edit_event' ) &&
+		   !wp_verify_nonce( $_POST['_wpnonce'], 'wpnonce_event_save' ) ) {
 		return $post->ID;
 	}
 
