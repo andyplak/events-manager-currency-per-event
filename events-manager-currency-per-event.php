@@ -3,38 +3,20 @@
  * Plugin Name: Events Manager - Currency Per Event
  * Plugin URI: http://www.andyplace.co.uk
  * Description: Plugin for Events Manager that allows the ticket currency to be configered per event.
- * Version: 1.2
+ * Version: 1.3
  * Author: Andy Place
  * Author URI: http://www.andyplace.co.uk
  * License: GPL2
  */
 
-$currencies = array(
-	"EUR" => "Euros",
-	"USD" => "U.S. Dollars",
-	"GBP" => "British Pounds",
-	"CAD" => "Canadian Dollars",
-	"AUD" => "Australian Dollars",
-	"BRL" => "Brazilian Reais",
-	"CZK" => "Czech Koruny",
-	"DKK" => "Danish Kroner",
-	"HKD" => "Hong Kong Dollars",
-	"HUF" => "Hungarian Forints",
-	"ILS" => "Israeli New Shekels",
-	"JPY" => "Japanese Yen",
-	"MYR" => "Malaysian Ringgit",
-	"MXN" => "Mexican Pesos",
-	"TWD" => "New Taiwan Dollars",
-	"NZD" => "New Zealand Dollars",
-	"NOK" => "Norwegian Kroner",
-	"PHP" => "Philippine Pesos",
-	"PLN" => "Polish Zlotys",
-	"SGD" => "Singapore Dollars",
-	"SEK" => "Swedish Kronor",
-	"CHF" => "Swiss Francs",
-	"THB" => "Thai Baht",
-	"TRY" => "Turkish Liras",
-);
+if( !function_exists('em_get_currencies') ) {
+	add_action( 'admin_notices', 'em_not_activated_currency_error_notice' );
+}
+
+function em_not_activated_currency_error_notice() {
+	$message = __('Please ensure both Events Manager and Events Manager Pro are enabled for the Currencies per Event plugin to work.', 'em-pro');
+	echo '<div class="error"> <p>'.$message.'</p></div>';
+}
 
 /**
  * Add metabox to revents page editor that allows us to configure the currency
@@ -59,7 +41,9 @@ add_action( 'add_meta_boxes_event', 'em_curr_adding_custom_meta_boxes', 10, 2 );
  * Note, this option is disabled when in Multiple Bookings mode
  */
 function render_curency_meta_box() {
-	global $post, $currencies;
+	global $post;
+
+	$currencies = em_get_currencies();
 
 	if( get_option('dbem_multiple_bookings', 0) ) {
 		_e('Currencies cannot be set per event when multiple bookings mode is enabled.');
@@ -79,9 +63,9 @@ function render_curency_meta_box() {
 
 	<select name="dbem_bookings_currency">
 		<option value="">Use Default</option>
-		<?php foreach( $currencies as $key => $currency) : ?>
+		<?php foreach( $currencies->names as $key => $currency) : ?>
 		<option value="<?php echo $key ?>" <?php echo ($curr_value == $key ? 'selected=selected':'') ?>>
-			<?php echo $key ?> - <?php echo $currency ?>
+			<?php echo $currency ?>
 		</option>
 		<?php endforeach; ?>
 	</select>
@@ -92,7 +76,8 @@ function render_curency_meta_box() {
  * Hook into front end event submission form and add currency fields
  */
 function em_curr_front_event_form_footer() {
-	global $currencies;
+
+	$currencies = em_get_currencies();
 
 	if( get_option('dbem_multiple_bookings', 0) ) {
 		return;
@@ -104,9 +89,9 @@ function em_curr_front_event_form_footer() {
 	?>
 	<h3><?php _e( 'Event Currency' ); ?></h3>
 	<select name="dbem_bookings_currency">
-		<option><?php echo $default_currency ?> - <?php echo $currencies[ $default_currency ] ?></option>
+		<option><?php echo $default_currency ?> - <?php echo $currencies->names[ $default_currency ] ?></option>
 		<option disabled>------------------</option>
-		<?php foreach( $currencies as $key => $currency) : ?>
+		<?php foreach( $currencies->names as $key => $currency) : ?>
 		<option value="<?php echo $key ?>">
 			<?php echo $key ?> - <?php echo $currency ?>
 		</option>
