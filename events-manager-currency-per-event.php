@@ -9,12 +9,15 @@
  * License: GPL2
  */
 
-if( !function_exists('em_get_currencies') ) {
-	add_action( 'admin_notices', 'em_not_activated_currency_error_notice' );
+function em_curr_check_em_active() {
+	if( !function_exists('em_get_currencies') ) {
+		add_action( 'admin_notices', 'em_not_activated_currency_error_notice' );
+	}
 }
+add_action('plugins_loaded', 'em_curr_check_em_active');
 
 function em_not_activated_currency_error_notice() {
-	$message = __('Please ensure both Events Manager and Events Manager Pro are enabled for the Currencies per Event plugin to work.', 'em-pro');
+	$message = __('Please ensure Events Manager is enabled for the Currencies per Event plugin to work.', 'em-pro');
 	echo '<div class="error"> <p>'.$message.'</p></div>';
 }
 
