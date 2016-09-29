@@ -3,18 +3,21 @@
  * Plugin Name: Events Manager - Currency Per Event
  * Plugin URI: http://www.andyplace.co.uk
  * Description: Plugin for Events Manager that allows the ticket currency to be configered per event.
- * Version: 1.3
+ * Version: 1.4
  * Author: Andy Place
  * Author URI: http://www.andyplace.co.uk
  * License: GPL2
  */
 
-if( !function_exists('em_get_currencies') ) {
-	add_action( 'admin_notices', 'em_not_activated_currency_error_notice' );
+function em_curr_check_em_active() {
+	if( !function_exists('em_get_currencies') ) {
+		add_action( 'admin_notices', 'em_not_activated_currency_error_notice' );
+	}
 }
+add_action('plugins_loaded', 'em_curr_check_em_active');
 
 function em_not_activated_currency_error_notice() {
-	$message = __('Please ensure both Events Manager and Events Manager Pro are enabled for the Currencies per Event plugin to work.', 'em-pro');
+	$message = __('Please ensure Events Manager is enabled for the Currencies per Event plugin to work.', 'em-pro');
 	echo '<div class="error"> <p>'.$message.'</p></div>';
 }
 
@@ -160,6 +163,29 @@ function em_curr_ticket_get_price( $ticket_price, $EM_Ticket ) {
 	return $ticket_price;
 }
 add_filter('em_ticket_get_price','em_curr_ticket_get_price', 10, 2);
+
+/**
+ * Hook into EM_Ticket_Booking->get_spaces() and detect if the event currency is non standard
+ * Store the currency value into our global var if requried.
+ * We use get_spaces as get_price doesn't have a hook we can use. A bit of a hack, but serve the
+ * purpose for items like #_BOOKINGSUMMARY in event emails
+ */
+function em_curr_em_booking_get_spaces( $ticket_booking_spaces, $EM_Object ) {
+	global $modify_currency;
+
+	if( get_class( $EM_Object ) == "EM_Ticket_Booking" ) {
+	  $EM_Event = $EM_Object->get_ticket()->get_event();
+
+		// Does this event have a custom currency?
+		if( get_post_meta( $EM_Event->post_id, '_event_currency', true ) ) {
+			// If so we set this to our global $modify_currency var for use later on
+			$modify_currency = get_post_meta( $EM_Event->post_id, '_event_currency', true );
+		}
+	}
+	return $ticket_booking_spaces;
+}
+add_filter('em_booking_get_spaces','em_curr_em_booking_get_spaces', 10, 2);
+
 
 /**
  * Hook into Events Manager's em_get_currency_formatted function
